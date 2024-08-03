@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  registry:
+    image: registry:2
+    networks:
+      - internal
+    volumes:
+      - registry-data:/var/lib/registry
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+
+  webhook-listener:
+    image: gitops
+    build: .
+    environment:
+      GITHUB_WEBHOOK_SECRET: $GITHUB_WEBHOOK_SECRET
+    volumes:
+      - webhook-data:/data
+    depends_on:
+      - registry
+    networks:
+      - internal
+
+  tunnel:
+    image: cloudflare/cloudflared:2024.6.1
+    command: tunnel --no-autoupdate run --token $(cat /run/secrets/cloudflare_token)
+    networks:
+      - internal
+      - external
+    secrets:
+       - cloudflare_token
+
+networks:
+  internal:
+    driver: overlay
+  external:
+    driver: bridge
+
+volumes:
+  registry-data:
+  webhook-data:
