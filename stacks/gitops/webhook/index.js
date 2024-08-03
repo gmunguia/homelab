@@ -1,9 +1,10 @@
+const fs = reqquire('fs');
 const express = require('express');
 const bodyParser = require('body-parser');
 
 const app = express();
 const port = 4000;
-const secret = process.env.GITHUB_WEBHOOK_SECRET;
+const secret = process.env.GITHUB_WEBHOOK_SECRET_FILE;
 
 app.use(bodyParser.json());
 

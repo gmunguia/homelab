@@ -1,34 +1,37 @@
 version: '3.8'
 
 services:
-  webhook-listener:
-    image: registry/gitops
-    build: .
+  webhook:
+    build: ./webhook
+    image: ghcr.io/gmunguia/gitops/webhook
     environment:
       GITHUB_WEBHOOK_SECRET_FILE: /run/secrets/github_webhook_secret
     volumes:
       - webhook-data:/data
-    depends_on:
-      - registry
     networks:
       - internal
     secrets:
       - github_webhook_secret
 
   tunnel:
-    image: cloudflare/cloudflared:2024.6.1
-    command: tunnel --no-autoupdate run --token $(cat /run/secrets/cloudflare_token)
+    build: ./tunnel
+    image: ghcr.io/gmunguia/gitops/tunnel
+    environment:
+      CLOUDFLARE_TOKEN_SECRET_FILE: /run/secrets/cloudflare_token
     networks:
       - internal
-      - webhook_bridge
     secrets:
-       - cloudflare_token
+      - cloudflare_token
 
 networks:
   internal:
     external: true
-  webhook_bridge:
-    driver: bridge
 
 volumes:
   webhook-data:
+  
+secrets:
+  github_webhook_secret:
+    external: true
+  cloudflare_token:
+    external: true
