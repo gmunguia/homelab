@@ -18,14 +18,14 @@ const logger = pino({
   },
 });
 
-process.on("uncaughtException", (error) => {
-  logger.error({ event: "uncaught-exception", error }, "Uncaught exception");
+process.on("uncaughtException", (err) => {
+  logger.error({ event: "uncaught-exception", err }, "Uncaught exception");
   process.exit(1);
 });
 
-process.on("unhandledRejection", (reason, promise) => {
+process.on("unhandledRejection", (reason) => {
   logger.error(
-    { event: "unhandled-rejection", reason, promise },
+    { event: "unhandled-rejection", err: reason },
     "Unhandled rejection",
   );
   process.exit(1);
@@ -198,9 +198,9 @@ const processQueue = async () => {
     .filter(Boolean);
 
   if (queue.length === 0) {
-    logger.info({ event: "sleep", item }, "No items to process; sleeping.");
+    logger.info({ event: "sleep" }, "No items to process; sleeping.");
     await delay(2000);
-    return
+    return;
   }
 
   const item = queue[0];
