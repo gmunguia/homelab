@@ -44,6 +44,12 @@ if (!fs.existsSync(QUEUE_FILE)) {
   fs.writeFileSync(QUEUE_FILE, "");
 }
 
+const delay = async (ms) => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+};
+
 const app = express();
 
 app.use(
@@ -180,28 +186,26 @@ const processQueue = async () => {
     .filter(Boolean);
 
   if (queue.length === 0) {
-    const twoSeconds = 2000;
-    setTimeout(processQueue, twoSeconds);
-    return;
+    await delay(2000);
   }
 
   const item = queue[0];
 
   try {
-    const success = await worker(item);
-    if (success) {
-      const newQueue = queue.slice(1).join("\n");
-      fs.writeFileSync(QUEUE_FILE, newQueue + "\n");
-      logger.info({ event: "processed", item }, "Processed and removed item");
-    }
-  } catch (error) {
-    logger.error({ event: "error", item, error }, "Failed to process item");
+    await worker(item);
+  } finally {
+    const newQueue = queue.slice(1).join("\n");
+    fs.writeFileSync(QUEUE_FILE, newQueue + "\n");
+    logger.info({ event: "processed", item }, "Processed and removed item");
   }
-
-  processQueue();
 };
 
-processQueue();
+// TODO graceful shutdown, timeouts, max retries
+(async () => {
+  while (true) {
+    await processQueue();
+  }
+})();
 
 app.listen(PORT, () => {
   logger.info(
