@@ -14,6 +14,11 @@ services:
       - internal
     secrets:
       - github_webhook_secret
+    deploy:
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
 
   tunnel:
     build: ./tunnel
@@ -24,6 +29,11 @@ services:
       - internal
     secrets:
       - cloudflare_token
+    deploy:
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
 
   registry:
     image: registry:2
@@ -33,6 +43,11 @@ services:
       - registry-data:/var/lib/registry
     environment:
       REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+    deploy:
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
 
 networks:
   internal:
