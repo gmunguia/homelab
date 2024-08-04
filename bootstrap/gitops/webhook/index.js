@@ -133,7 +133,7 @@ app.post("/webhook", (req, res) => {
   }
 });
 
-const getStacks = async (baseDir = "/repo/stacks") => {
+const getStacks = async (baseDir) => {
   const folders = await fsp.readdir(baseDir);
 
   const stacks = [];
@@ -160,9 +160,21 @@ const exec = async (...args) => {
 const worker = async (item) => {
   logger.info({ event: "processing", item }, "Processing item");
 
-  await exec("git pull --ff-only", { cwd: "/repo" });
+  if (!fs.existsSync(QUEUE_FILE)) {
+    logger.error("Queue file does not exist");
+    return;
+  }
 
-  const stacks = await getStacks();
+  if (!(await fsp.exists("/data/homelab"))) {
+    logger.info({ event: "cloning", item }, "Repository folder does not exist");
+    await exec(`git clone --depth 1 https://github.com/gmunguia/homelab.git`, {
+      cwd: "/data",
+    });
+  }
+
+  await exec("git pull --ff-only", { cwd: "/data/homelab" });
+
+  const stacks = await getStacks("/data/homelab/stacks");
 
   for (const { name, path } of stacks) {
     await exec("docker compose build", { cwd: path });
