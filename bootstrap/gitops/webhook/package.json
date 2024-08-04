@@ -12,6 +12,7 @@
   "dependencies": {
     "body-parser": "^1.20.2",
     "express": "^4.19.2",
+    "morgan": "^1.10.0",
     "pino": "^9.3.2",
     "pino-pretty": "^11.2.2"
   }
