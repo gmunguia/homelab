@@ -179,7 +179,7 @@ const worker = async (item) => {
 
   for (const { name, path } of stacks) {
     await exec(
-      `docker buildx build  --platform linux/amd64 -t ${name}:${item.hash} --push .`,
+      `docker build --pull --push -t ${name}:${item.hash} .`,
       { cwd: path },
     );
     await exec(
