@@ -23,12 +23,22 @@ services:
     secrets:
       - cloudflare_token
 
+  registry:
+    image: registry:2
+    networks:
+      - internal
+    volumes:
+      - registry-data:/var/lib/registry
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+
 networks:
   internal:
     external: true
 
 volumes:
   webhook-data:
+  registry-data:
   
 secrets:
   github_webhook_secret:
