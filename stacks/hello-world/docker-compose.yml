@@ -1,6 +1,5 @@
-version: '3.8'
+version: "3.8"
 
 services:
   hello:
-    build: .
-    image: registry:5000/hello/hello
+    image: $IMAGE

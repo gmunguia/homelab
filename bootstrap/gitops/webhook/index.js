@@ -35,6 +35,7 @@ process.on("unhandledRejection", (reason) => {
 const PORT = process.env.PORT || 4000;
 const QUEUE_FILE = "/data/queue";
 const GITHUB_WEBHOOK_SECRET_FILE = process.env.GITHUB_WEBHOOK_SECRET_FILE;
+const IMAGE_REGISTRY_URL = process.env.IMAGE_REGISTRY_URL;
 
 const GITHUB_WEBHOOK_SECRET = fs.readFileSync(
   GITHUB_WEBHOOK_SECRET_FILE,
@@ -61,7 +62,7 @@ app.use(
 
 app.use(
   bodyParser.json({
-    verify: (req, res, buf) => {
+    verify: (req, _, buf) => {
       req.rawBody = buf;
     },
   }),
@@ -158,16 +159,11 @@ const exec = async (...args) => {
   return { stdout, stderr };
 };
 
-const worker = async (item) => {
-  logger.info({ event: "processing", item }, "Processing item");
-
-  if (!fs.existsSync(QUEUE_FILE)) {
-    logger.error("Queue file does not exist");
-    return;
-  }
+const worker = async (hash) => {
+  logger.info({ event: "processing", hash }, "Processing item");
 
   if (!fs.existsSync("/data/homelab")) {
-    logger.info({ event: "cloning", item }, "Repository folder does not exist");
+    logger.info({ event: "cloning", hash }, "Repository folder does not exist");
     await exec(`git clone --depth 1 https://github.com/gmunguia/homelab.git`, {
       cwd: "/data",
     });
@@ -178,13 +174,19 @@ const worker = async (item) => {
   const stacks = await getStacks("/data/homelab/stacks");
 
   for (const { name, path } of stacks) {
-    await exec(
-      `docker build --pull --push -t ${name}:${item.hash} .`,
-      { cwd: path },
-    );
+    const image = `${IMAGE_REGISTRY_URL}/${name}:${hash}`;
+    await exec(`docker build --pull --tag ${image} .`, { cwd: path });
+    await exec(`docker push ${image}`, {
+      cwd: path,
+    });
     await exec(
       `docker stack deploy --prune --compose-file docker-compose.yml ${name}`,
-      { cwd: path },
+      {
+        cwd: path,
+        env: {
+          IMAGE: image,
+        },
+      },
     );
   }
 };
@@ -206,14 +208,14 @@ const processQueue = async () => {
     return;
   }
 
-  const item = queue[0];
+  const hash = queue[0];
 
   try {
-    await worker(item);
+    await worker(hash);
   } finally {
     const newQueue = queue.slice(1).join("\n");
     fs.writeFileSync(QUEUE_FILE, newQueue + "\n");
-    logger.info({ event: "processed", item }, "Processed and removed item");
+    logger.info({ event: "processed", hash }, "Processed and removed item");
   }
 };
 
