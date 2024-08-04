@@ -10,7 +10,9 @@ FROM node:20-slim
 
 COPY --from=docker /usr/local/bin/docker /usr/bin/
 
-RUN apt-get update && apt-get install --no-install-recommends -y git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y git ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 COPY --from=builder /usr/src/app ./
