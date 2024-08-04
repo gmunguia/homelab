@@ -198,7 +198,9 @@ const processQueue = async () => {
     .filter(Boolean);
 
   if (queue.length === 0) {
+    logger.info({ event: "sleep", item }, "No items to process; sleeping.");
     await delay(2000);
+    return
   }
 
   const item = queue[0];
