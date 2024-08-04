@@ -127,7 +127,7 @@ app.post("/webhook", (req, res) => {
   if (payload.ref === "refs/heads/main") {
     fs.appendFileSync(QUEUE_FILE, payload.after + "\n");
     res.status(200).send("Queued");
-    logger.info({ event: "queued", after: payload.after }, "Queued item");
+    logger.info({ event: "queued", hash: payload.after }, "Queued item");
   } else {
     res.status(400).send("Not relevant");
     logger.info({ event: "irrelevant" }, "Received irrelevant webhook event");
@@ -178,8 +178,10 @@ const worker = async (item) => {
   const stacks = await getStacks("/data/homelab/stacks");
 
   for (const { name, path } of stacks) {
-    await exec("docker compose build", { cwd: path });
-    await exec("docker compose push", { cwd: path });
+    await exec(
+      `docker buildx build  --platform linux/amd64 -t ${name}:${item.hash} --push .`,
+      { cwd: path },
+    );
     await exec(
       `docker stack deploy --prune --compose-file docker-compose.yml ${name}`,
       { cwd: path },
