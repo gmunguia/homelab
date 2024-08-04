@@ -165,7 +165,7 @@ const worker = async (item) => {
     return;
   }
 
-  if (!(await fsp.exists("/data/homelab"))) {
+  if (!fs.existsSync("/data/homelab")) {
     logger.info({ event: "cloning", item }, "Repository folder does not exist");
     await exec(`git clone --depth 1 https://github.com/gmunguia/homelab.git`, {
       cwd: "/data",
