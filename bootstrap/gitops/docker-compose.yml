@@ -9,6 +9,8 @@ services:
       PORT: 4000
     volumes:
       - webhook-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../..:/repo
     networks:
       - internal
     secrets:
