@@ -38,7 +38,9 @@ services:
   registry:
     image: registry:2
     networks:
-      - internal
+      internal:
+        aliases:
+          - registry
     volumes:
       - registry-data:/var/lib/registry
     environment:
