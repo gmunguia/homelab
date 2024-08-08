@@ -7,11 +7,12 @@ const fsp = require("node:fs/promises");
 const express = require("express");
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
-const pino = require("pino");
+const { pino } = require("pino");
 
 const logger = pino({
   transport: {
     target: "pino-pretty",
+    level: process.env.LOG_LEVEL ?? "info",
     options: {
       translateTime: true,
       ignore: "pid,hostname",
@@ -32,8 +33,10 @@ process.on("unhandledRejection", (reason) => {
   process.exit(1);
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT;
 const QUEUE_FILE = "/data/queue";
+const GITHUB_REPO = process.env.GITHUB_REPO;
+const BRANCH_NAME = process.env.BRANCH_NAME;
 const GITHUB_WEBHOOK_SECRET_FILE = process.env.GITHUB_WEBHOOK_SECRET_FILE;
 const IMAGE_REGISTRY_URL = process.env.IMAGE_REGISTRY_URL;
 
@@ -63,6 +66,7 @@ app.use(
 app.use(
   bodyParser.json({
     verify: (req, _, buf) => {
+      // @ts-expect-error
       req.rawBody = buf;
     },
   }),
@@ -154,6 +158,7 @@ const getStacks = async (baseDir) => {
 
 const _exec = promisify(childProcess.exec);
 const exec = async (...args) => {
+  // @ts-expect-error
   const { stdout, stderr } = await _exec(...args);
   logger.debug({ event: "exec", stdout, stderr }, "exec shell command");
   return { stdout, stderr };
@@ -162,16 +167,18 @@ const exec = async (...args) => {
 const worker = async (hash) => {
   logger.info({ event: "processing", hash }, "Processing item");
 
-  if (!fs.existsSync("/data/homelab")) {
+  if (!fs.existsSync("/data/repo")) {
     logger.info({ event: "cloning", hash }, "Repository folder does not exist");
-    await exec(`git clone --depth 1 https://github.com/gmunguia/homelab.git`, {
+    await exec(`git clone --depth 1 ${GITHUB_REPO} repo`, {
       cwd: "/data",
     });
   }
 
-  await exec("git pull --ff-only", { cwd: "/data/homelab" });
+  await exec(`git fetch && git reset --hard origin/${BRANCH_NAME}`, {
+    cwd: "/data/repo",
+  });
 
-  const stacks = await getStacks("/data/homelab/stacks");
+  const stacks = await getStacks("/data/repo/stacks");
 
   for (const { name, path } of stacks) {
     const image = `${IMAGE_REGISTRY_URL}/${name}:${hash}`;

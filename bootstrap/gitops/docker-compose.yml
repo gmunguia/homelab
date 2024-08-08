@@ -6,7 +6,9 @@ services:
     image: ghcr.io/gmunguia/gitops/webhook
     environment:
       PORT: 4000
-      IMAGE_REGISTRY_URL: 127.0.0.1:5000
+      IMAGE_REGISTRY_URL: registry:5000
+      GITHUB_REPO: "https://github.com/gmunguia/homelab.git"
+      BRANCH_NAME: "master"
       GITHUB_WEBHOOK_SECRET_FILE: /run/secrets/github_webhook_secret
     volumes:
       - webhook-data:/data
