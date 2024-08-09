@@ -9,10 +9,19 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const { pino } = require("pino");
 
+const BRANCH_NAME = process.env.BRANCH_NAME;
+const GITHUB_REPO = process.env.GITHUB_REPO;
+const GITHUB_WEBHOOK_SECRET_FILE = process.env.GITHUB_WEBHOOK_SECRET_FILE;
+const IMAGE_REGISTRY_URL = process.env.IMAGE_REGISTRY_URL;
+const LOG_LEVEL = process.env.LOG_LEVEL ?? "info";
+const PORT = process.env.PORT;
+const QUEUE_FILE = "/data/queue";
+const STACKS_FOLDER = process.env.STACKS_FOLDER;
+
 const logger = pino({
   transport: {
     target: "pino-pretty",
-    level: process.env.LOG_LEVEL ?? "info",
+    level: LOG_LEVEL,
     options: {
       translateTime: true,
       ignore: "pid,hostname",
@@ -32,13 +41,6 @@ process.on("unhandledRejection", (reason) => {
   );
   process.exit(1);
 });
-
-const PORT = process.env.PORT;
-const QUEUE_FILE = "/data/queue";
-const GITHUB_REPO = process.env.GITHUB_REPO;
-const BRANCH_NAME = process.env.BRANCH_NAME;
-const GITHUB_WEBHOOK_SECRET_FILE = process.env.GITHUB_WEBHOOK_SECRET_FILE;
-const IMAGE_REGISTRY_URL = process.env.IMAGE_REGISTRY_URL;
 
 const GITHUB_WEBHOOK_SECRET = fs.readFileSync(
   GITHUB_WEBHOOK_SECRET_FILE,
@@ -129,7 +131,7 @@ app.post("/webhook", (req, res) => {
   }
 
   const payload = req.body;
-  if (payload.ref === "refs/heads/main") {
+  if (payload.ref === `refs/heads/${BRANCH_NAME}`) {
     fs.appendFileSync(QUEUE_FILE, payload.after + "\n");
     res.status(200).send("Queued");
     logger.info({ event: "queued", hash: payload.after }, "Queued item");
@@ -178,7 +180,7 @@ const worker = async (hash) => {
     cwd: "/data/repo",
   });
 
-  const stacks = await getStacks("/data/repo/stacks");
+  const stacks = await getStacks(path.join("/data/repo", STACKS_FOLDER));
 
   for (const { name, path } of stacks) {
     const image = `${IMAGE_REGISTRY_URL}/${name}:${hash}`;
