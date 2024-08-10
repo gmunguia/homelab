@@ -8,7 +8,7 @@ services:
       BRANCH_NAME: "master"
       GITHUB_REPO: "https://github.com/gmunguia/homelab.git"
       GITHUB_WEBHOOK_SECRET_SECRET_FILE: /run/secrets/github_webhook_secret
-      IMAGE_REGISTRY_URL: registry:5000
+      IMAGE_REGISTRY_URL: 127.0.0.1:5000
       NODE_ENV: "production"
       PORT: 4000
       STACKS_FOLDER: "stacks"
@@ -43,9 +43,9 @@ services:
   registry:
     image: registry:2
     networks:
-      internal:
-        aliases:
-          - registry
+      - internal
+    ports:
+      - 5000:5000
     volumes:
       - registry-data:/var/lib/registry
     environment:
