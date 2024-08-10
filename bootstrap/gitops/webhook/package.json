@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test:fast": "NODE_ENV=test node test/fast.js",
+    "test:slow:build": "docker build --tag webhook-test:latest ./test",
+    "test:slow": "./test/run_dind.sh"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +25,8 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.14.14",
     "@types/pino": "^7.0.5",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
     "typescript": "^5.5.4"
   }
 }

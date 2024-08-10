@@ -1,6 +1,6 @@
-FROM docker:20.10 as docker
+FROM docker:20.10 AS docker
 
-FROM node:20 as builder
+FROM node:20 AS builder
 
 WORKDIR /usr/src/app
 COPY package*.json ./

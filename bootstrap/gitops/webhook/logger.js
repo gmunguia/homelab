@@ -12,4 +12,4 @@ const logger = pino({
   },
 });
 
-module.exports = { logger };
+module.exports.logger = logger;

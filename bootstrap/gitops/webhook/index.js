@@ -1,5 +1,5 @@
-const app = require("./app");
-const { processQueue } = require("./queue");
+const { makeApp } = require("./app");
+const { makeQueue } = require("./queue");
 const { logger } = require("./logger");
 const config = require("./config");
 
@@ -16,20 +16,14 @@ process.on("unhandledRejection", (reason) => {
   process.exit(1);
 });
 
-const server = app.listen(config.PORT, () => {
-  logger.info(
-    { event: "server-start", port: config.PORT },
-    `Server is listening on port ${config.PORT}`,
-  );
-});
-
+const queue = makeQueue();
 const shutdownQueue = (() => {
   let processing;
   let isShuttingDown = false;
 
   (async () => {
     while (!isShuttingDown) {
-      processing = processQueue();
+      processing = queue.processQueue();
       await processing;
     }
   })();
@@ -40,6 +34,12 @@ const shutdownQueue = (() => {
   };
 })();
 
+const server = makeApp({ queue }).listen(config.PORT, () => {
+  logger.info(
+    { event: "server-start", port: config.PORT },
+    `Server is listening on port ${config.PORT}`,
+  );
+});
 const shutdownServer = async () => {
   return new Promise((resolve) => {
     server.close((err) => {

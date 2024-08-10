@@ -4,7 +4,9 @@ const path = require("node:path");
 const { promisify } = require("node:util");
 const childProcess = require("node:child_process");
 const { logger } = require("./logger");
-const config = require("./config");
+const _config = require("./config");
+
+const EMPTY_QUEUE = Symbol("EMPTY_QUEUE");
 
 const delay = async (ms) => {
   return new Promise((resolve) => {
@@ -37,66 +39,89 @@ const exec = async (...args) => {
   return { stdout, stderr };
 };
 
-const worker = async (hash) => {
-  logger.info({ event: "processing", hash }, "Processing item");
+const makeQueue = (config = _config) => {
+  const worker = async (hash) => {
+    logger.info({ event: "processing", hash }, "Processing message");
 
-  if (!fs.existsSync("/data/repo")) {
-    logger.info({ event: "cloning", hash }, "Repository folder does not exist");
-    await exec(`git clone --depth 1 ${config.GITHUB_REPO} repo`, {
-      cwd: "/data",
-    });
-  }
+    if (!fs.existsSync("/data/repo")) {
+      logger.info(
+        { event: "cloning", hash },
+        "Repository folder does not exist",
+      );
+      await exec(`git clone --depth 1 ${config.GITHUB_REPO} repo`, {
+        cwd: "/data",
+      });
+    }
 
-  await exec(`git fetch && git reset --hard origin/${config.BRANCH_NAME}`, {
-    cwd: "/data/repo",
-  });
-
-  const stacks = await getStacks(path.join("/data/repo", config.STACKS_FOLDER));
-
-  for (const { name, path } of stacks) {
-    const image = `${config.IMAGE_REGISTRY_URL}/${name}:${hash}`;
-    await exec(`docker build --pull --tag ${image} .`, { cwd: path });
-    await exec(`docker push ${image}`, {
-      cwd: path,
-    });
-    await exec(
-      `docker stack deploy --prune --compose-file docker-compose.yml ${name}`,
-      {
-        cwd: path,
-        env: {
-          IMAGE: image,
-        },
-      },
+    const stacks = await getStacks(
+      path.join("/data/repo", config.STACKS_FOLDER),
     );
-  }
-};
 
-const processQueue = async () => {
-  if (!fs.existsSync(config.QUEUE_FILE)) {
-    logger.error("Queue file does not exist");
-    return;
-  }
+    for (const { name, path } of stacks) {
+      const image = `${config.IMAGE_REGISTRY_URL}/${name}:${hash}`;
+      await exec(`docker build --pull --tag ${image} .`, { cwd: path });
+      await exec(`docker push ${image}`, {
+        cwd: path,
+      });
+      await exec(
+        `docker stack deploy --prune --compose-file docker-compose.yml ${name}`,
+        {
+          cwd: path,
+          env: {
+            ...process.env,
+            IMAGE: image,
+          },
+        },
+      );
+    }
+  };
 
-  const queue = fs
-    .readFileSync(config.QUEUE_FILE, "utf-8")
-    .split("\n")
-    .filter(Boolean);
+  const processQueue = async () => {
+    const hash = dequeue();
 
-  if (queue.length === 0) {
-    logger.info({ event: "sleep" }, "No items to process; sleeping.");
-    await delay(2000);
-    return;
-  }
+    if (hash === EMPTY_QUEUE) {
+      logger.info({ event: "empty-queue" }, "Queue is empty. Waiting.");
+      await delay(2_000);
+      return;
+    }
 
-  const hash = queue[0];
+    try {
+      await worker(hash);
+      logger.info({ event: "worker-succeeded", hash }, "Processed message");
+    } catch (err) {
+      logger.error(
+        { event: "worker-failed", hash, err },
+        "Failed processing message",
+      );
+    }
+  };
 
-  try {
-    await worker(hash);
-  } finally {
-    const newQueue = queue.slice(1).join("\n");
+  const enqueue = (message) => {
+    fs.appendFileSync(config.QUEUE_FILE, message + "\n");
+  };
+
+  const dequeue = () => {
+    if (!fs.existsSync(config.QUEUE_FILE)) {
+      logger.error("Queue file does not exist");
+      return;
+    }
+
+    const messages = fs
+      .readFileSync(config.QUEUE_FILE, "utf-8")
+      .split("\n")
+      .filter(Boolean);
+
+    if (messages.length === 0) {
+      return EMPTY_QUEUE;
+    }
+
+    const newQueue = messages.slice(1).join("\n");
     fs.writeFileSync(config.QUEUE_FILE, newQueue + "\n");
-    logger.info({ event: "processed", hash }, "Processed and removed item");
-  }
+
+    return messages[0];
+  };
+
+  return { dequeue, enqueue, processQueue };
 };
 
-module.exports = { processQueue };
+module.exports.makeQueue = makeQueue;
