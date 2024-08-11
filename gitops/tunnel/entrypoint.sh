@@ -1,4 +1,5 @@
 #!/bin/sh
+
 set -e
 
 if [ -n "$CLOUDFLARE_TOKEN" ]; then
@@ -6,7 +7,7 @@ if [ -n "$CLOUDFLARE_TOKEN" ]; then
 elif [ -n "$CLOUDFLARE_TOKEN_SECRET_FILE" ]; then
 	TOKEN=$(cat "$CLOUDFLARE_TOKEN_SECRET_FILE")
 else
-	echo "Error: neither CLOUDFLARE_TOKEN is set nor CLOUDFLARE_TOKEN_SECRET_FILE is set and valid." >&2
+	echo "Error: neither CLOUDFLARE_TOKEN is set nor CLOUDFLARE_TOKEN_SECRET_FILE, '$CLOUDFLARE_TOKEN_SECRET_FILE', is set and valid." >&2
 	exit 1
 fi
 
