@@ -2,6 +2,12 @@
 
 set -e
 
+echo "Environment variables:" >&2
+env | sort >&2
+
+echo "Contents of /run/secrets directory:" >&2
+ls -la /run/secrets >&2
+
 if [ -n "$CLOUDFLARE_TOKEN" ]; then
 	TOKEN="$CLOUDFLARE_TOKEN"
 elif [ -n "$CLOUDFLARE_TOKEN_SECRET_FILE" ]; then
