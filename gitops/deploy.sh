@@ -36,6 +36,6 @@ for service in "${SERVICES[@]}"; do
 done
 
 echo "Updating Docker Swarm stack"
-docker stack deploy -c $COMPOSE_FILE $STACK_NAME
+docker stack deploy --prune --with-registry-auth -c $COMPOSE_FILE $STACK_NAME
 
 echo "Deployment completed successfully!"
