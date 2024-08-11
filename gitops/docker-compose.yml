@@ -3,7 +3,7 @@ version: "3.8"
 services:
   webhook:
     build: ./webhook
-    image: ghcr.io/gmunguia/gitops/webhook
+    image: ghcr.io/gmunguia/gitops/webhook:$IMAGE_TAG
     environment:
       BRANCH_NAME: "master"
       GITHUB_REPO: "https://github.com/gmunguia/homelab.git"
@@ -29,7 +29,7 @@ services:
 
   tunnel:
     build: ./tunnel
-    image: ghcr.io/gmunguia/gitops/tunnel
+    image: ghcr.io/gmunguia/gitops/tunnel:$IMAGE_TAG
     environment:
       CLOUDFLARE_TOKEN_SECRET_FILE: /run/secrets/cloudflare_token
     networks:
