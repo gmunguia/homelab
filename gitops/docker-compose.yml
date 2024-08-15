@@ -20,11 +20,7 @@ services:
       - github_webhook_secret
     deploy:
       mode: replicated
-      replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-        order: stop-first
+      replicas: 2
 
   tunnel:
     image: ghcr.io/gmunguia/gitops/tunnel:$IMAGE_TAG
@@ -36,10 +32,6 @@ services:
       - cloudflare_token
     deploy:
       mode: global
-      update_config:
-        parallelism: 1
-        delay: 10s
-        order: stop-first
 
   registry:
     image: registry:2
@@ -54,10 +46,6 @@ services:
     deploy:
       mode: replicated
       replicas: 1
-      update_config:
-        parallelism: 1
-        delay: 10s
-        order: stop-first
 
 networks:
   internal:
