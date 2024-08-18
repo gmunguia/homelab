@@ -4,7 +4,7 @@ set -e
 
 STACK_NAME="gitops"
 COMPOSE_FILE="docker-compose.yml"
-SERVICES=("webhook" "tunnel")
+SERVICES=("webhook" "tunnel" "monitor")
 
 if ! command -v yq &>/dev/null; then
 	echo "yq is not installed. Please install it to proceed."

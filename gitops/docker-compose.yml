@@ -47,6 +47,25 @@ services:
       mode: replicated
       replicas: 1
 
+  monitor:
+    image: ghcr.io/gmunguia/gitops/webhook:$IMAGE_TAG
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    ports:
+      - "8686:8686"
+      - "514:514/udp"
+    environment:
+      - AXIOM_TOKEN_FILE=/run/secrets/axiom_token
+      - PROCFS_ROOT=/host/proc
+      - SYSFS_ROOT=/host/sys
+    secrets:
+      - axiom_token
+    network_mode: host
+    pid: host
+
 networks:
   internal:
     external: true
@@ -59,4 +78,6 @@ secrets:
   github_webhook_secret:
     external: true
   cloudflare_token:
+    external: true
+  axiom_token:
     external: true

@@ -1,0 +1,43 @@
+api:
+  enabled: true
+  address: 0.0.0.0:8686
+
+sources:
+  docker_logs:
+    type: docker_logs
+    include_containers: []
+    include_images: []
+    exclude_containers: []
+    exclude_images: []
+
+  host_metrics:
+    type: host_metrics
+    filesystem:
+      devices:
+        excludes: [binfmt_misc]
+    procfs_root: ${PROCFS_ROOT}
+    sysfs_root: ${SYSFS_ROOT}
+    collectors:
+      - cpu
+      - disk
+      - filesystem
+      - load
+      - memory
+      - network
+
+  syslog:
+    type: syslog
+    mode: udp
+    address: 0.0.0.0:514
+    max_length: 32000
+
+sinks:
+  axiom_logs:
+    type: axiom
+    inputs:
+      - docker_logs
+      - host_metrics
+      - syslog
+    dataset: your_dataset_name
+    token: ${AXIOM_TOKEN}
+    endpoint: https://api.axiom.co
