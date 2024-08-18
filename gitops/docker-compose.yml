@@ -59,6 +59,7 @@ services:
       - "514:514/udp"
     environment:
       - AXIOM_TOKEN_FILE=/run/secrets/axiom_token
+      - AXIOM_DATASET=homelab
       - PROCFS_ROOT=/host/proc
       - SYSFS_ROOT=/host/sys
     secrets:
