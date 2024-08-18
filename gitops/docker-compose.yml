@@ -49,6 +49,8 @@ services:
 
   monitor:
     image: ghcr.io/gmunguia/gitops/webhook:$IMAGE_TAG
+    networks:
+      - host_network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/log:/var/log:ro
@@ -63,12 +65,13 @@ services:
       - SYSFS_ROOT=/host/sys
     secrets:
       - axiom_token
-    network_mode: host
-    pid: host
 
 networks:
   internal:
     external: true
+  host_network:
+    external: true
+    name: host
 
 volumes:
   webhook-data:
