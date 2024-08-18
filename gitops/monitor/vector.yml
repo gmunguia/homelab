@@ -5,18 +5,12 @@ api:
 sources:
   docker_logs:
     type: docker_logs
-    include_containers: []
-    include_images: []
-    exclude_containers: []
-    exclude_images: []
 
   host_metrics:
     type: host_metrics
     filesystem:
       devices:
         excludes: [binfmt_misc]
-    procfs_root: ${PROCFS_ROOT}
-    sysfs_root: ${SYSFS_ROOT}
     collectors:
       - cpu
       - disk

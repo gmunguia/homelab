@@ -20,4 +20,5 @@ COPY . .
 
 EXPOSE 4000
 
+ENTRYPOINT [ "./entrypoint.sh" ]
 CMD ["npm", "start"]
